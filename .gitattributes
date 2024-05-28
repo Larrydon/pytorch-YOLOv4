@@ -1,3 +1,2 @@
-weight/yolov4-tiny.weights filter=lfs diff=lfs merge=lfs -text
-weight/yolov4-tiny.pth filter=lfs diff=lfs merge=lfs -text
-weight/** filter=lfs diff=lfs merge=lfs -text
+weight/*.pth filter=lfs diff=lfs merge=lfs -text
+weight/*.weights filter=lfs diff=lfs merge=lfs -text
