@@ -19,6 +19,7 @@ from tool.torch_utils import *
 from tool.darknet2pytorch import Darknet
 import torch
 import argparse
+import os
 
 """hyper parameters"""
 use_cuda = True
@@ -30,17 +31,23 @@ def detect_cv2(cfgfile, weightfile, imgfile):
     m.print_network()
     m.load_weights(weightfile)
     print('Loading weights from %s... Done!' % (weightfile))
+    print('Loading cfgfile from %s... Done!' % (cfgfile))
+    print('Loading imgfile from %s... Done!' % (imgfile))
+    
+    current_dir = os.path.dirname(imgfile)
 
     if use_cuda:
         m.cuda()
 
     num_classes = m.num_classes
     if num_classes == 20:
-        namesfile = 'data/voc.names'
+        namesfile = current_dir + '/voc.names'
     elif num_classes == 80:
-        namesfile = 'data/coco.names'
+        namesfile = current_dir + '/coco.names'
     else:
-        namesfile = 'data/x.names'
+        namesfile = current_dir + '/x.names'
+        
+    print('detect_cv2 namesfile= %s' % (namesfile))
     class_names = load_class_names(namesfile)
 
     img = cv2.imread(imgfile)
@@ -54,7 +61,10 @@ def detect_cv2(cfgfile, weightfile, imgfile):
         if i == 1:
             print('%s: Predicted in %f seconds.' % (imgfile, (finish - start)))
 
-    plot_boxes_cv2(img, boxes[0], savename='predictions.jpg', class_names=class_names)
+    predictions_path = os.path.dirname(imgfile) + '/predictions_by_demo.jpg'
+    print('demo.py plot_boxes_cv2 predictions_path=' + predictions_path)
+        
+    plot_boxes_cv2(img, boxes[0], savename= predictions_path, class_names=class_names)
 
 
 def detect_cv2_camera(cfgfile, weightfile):
@@ -148,15 +158,33 @@ def get_args():
     parser.add_argument('-imgfile', type=str,
                         default='./data/mscoco2017/train2017/190109_180343_00154162.jpg',
                         help='path of your image file.', dest='imgfile')
-    parser.add_argument('-torch', type=bool, default=false,
+    parser.add_argument('-torch', type=bool, default=False,
                         help='use torch weights')
     args = parser.parse_args()
+    
+    
+    # 將相對路徑轉換為絕對路徑
+    #args.cfgfile = os.path.abspath(args.cfgfile)
+    #args.weightfile = os.path.abspath(args.weightfile)
+    #args.imgfile = os.path.abspath(args.imgfile)
 
     return args
 
 
 if __name__ == '__main__':
     args = get_args()
+    
+    # 打印 Python 解释器版本
+    print("Python interpreter version:", sys.version)
+    # 打印 PyTorch 版本
+    print("PyTorch version:", torch.__version__)
+    # 检查 CUDA 是否可用以及 CUDA 版本
+    print("CUDA available:", torch.cuda.is_available())
+    if torch.cuda.is_available():
+      print("CUDA version:", torch.version.cuda)
+      print("Number of CUDA devices:", torch.cuda.device_count())
+    
+    
     if args.imgfile:
         detect_cv2(args.cfgfile, args.weightfile, args.imgfile)
         # detect_imges(args.cfgfile, args.weightfile)

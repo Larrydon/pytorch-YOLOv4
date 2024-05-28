@@ -4,6 +4,8 @@ import torch.nn.functional as F
 from tool.torch_utils import *
 from tool.yolo_layer import YoloLayer
 
+from cfg import Cfg
+
 
 class Mish(torch.nn.Module):
     def __init__(self):
@@ -453,34 +455,68 @@ if __name__ == "__main__":
     import sys
     import cv2
 
+
+    n_classes = Cfg["classes"]
+    height = Cfg["width"]
+    width = Cfg["height"]
+
     namesfile = None
-    if len(sys.argv) == 6:
-        n_classes = int(sys.argv[1])
-        weightfile = sys.argv[2]
-        imgfile = sys.argv[3]
-        height = int(sys.argv[4])
-        width = int(sys.argv[5])
-    elif len(sys.argv) == 7:
-        n_classes = int(sys.argv[1])
-        weightfile = sys.argv[2]
-        imgfile = sys.argv[3]
-        height = int(sys.argv[4])
-        width = int(sys.argv[5])
-        namesfile = sys.argv[6]
+    if len(sys.argv) == 3:
+        #n_classes = int(sys.argv[1])
+        #weightfile = sys.argv[2]
+        #imgfile = sys.argv[3]
+        #height = int(sys.argv[4])
+        #width = int(sys.argv[5])
+
+        weightfile = sys.argv[1]
+        imgfile = sys.argv[2]
+    elif len(sys.argv) == 4:
+        #n_classes = int(sys.argv[1])
+        #weightfile = sys.argv[2]
+        #imgfile = sys.argv[3]
+        #height = int(sys.argv[4])
+        #width = int(sys.argv[5])
+        #namesfile = sys.argv[6]
+
+        weightfile = sys.argv[1]
+        imgfile = sys.argv[2]
+        namesfile = sys.argv[3]
     else:
         print('Usage: ')
         print('  python models.py num_classes weightfile imgfile namefile')
 
+    #>2024-05-14 Larry Add
+    _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    #weight_file_path = _BASE_DIR + weightfile
+    if weightfile.startswith('/'):
+        weightfile = weightfile[1:]
+    weight_file_path = os.path.join(_BASE_DIR, weightfile)
+
+    #img_file_path = _BASE_DIR + imgfile
+    if imgfile.startswith('/'):
+        imgfile = imgfile[1:]
+    img_file_path = os.path.join(_BASE_DIR, imgfile)
+
+    #names_file_path = _BASE_DIR + namesfile
+    if namesfile.startswith('/'):
+        names_file_path = namesfile[1:]
+        namesfile = names_file_path
+    names_file_path = os.path.join(_BASE_DIR, namesfile)
+    #<End
+
     model = Yolov4(yolov4conv137weight=None, n_classes=n_classes, inference=True)
 
-    pretrained_dict = torch.load(weightfile, map_location=torch.device('cuda'))
+    if torch.cuda.is_available():
+        pretrained_dict = torch.load(weight_file_path, map_location=torch.device('cuda'))
+    else :
+        pretrained_dict = torch.load(weightfile, map_location=torch.device('cpu'))    
     model.load_state_dict(pretrained_dict)
 
     use_cuda = True
     if use_cuda:
         model.cuda()
 
-    img = cv2.imread(imgfile)
+    img = cv2.imread(img_file_path)
 
     # Inference input size is 416*416 does not mean training size is the same
     # Training size could be 608*608 or even other sizes
@@ -505,5 +541,6 @@ if __name__ == "__main__":
         else:
             print("please give namefile")
 
+    
     class_names = load_class_names(namesfile)
-    plot_boxes_cv2(img, boxes[0], 'predictions.jpg', class_names)
+    plot_boxes_cv2(img, boxes[0], 'predictions_by_model.jpg', class_names)

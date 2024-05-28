@@ -240,8 +240,8 @@ def draw_box(img, bboxes):
 
 
 class Yolo_dataset(Dataset):
-    def __init__(self, label_path, cfg, train=True):
-        super(Yolo_dataset, self).__init__()
+    def __init__(self, label_path, cfg, train=True):   	
+        super(Yolo_dataset, self).__init__()        
         if cfg.mixup == 2:
             print("cutmix=1 - isn't supported for Detector")
             raise
@@ -256,7 +256,7 @@ class Yolo_dataset(Dataset):
         f = open(label_path, 'r', encoding='utf-8')
         for line in f.readlines():
             data = line.split(" ")
-            truth[data[0]] = []
+            truth[data[0].replace('\n', '')] = []
             for i in data[1:]:
                 truth[data[0]].append([int(float(j)) for j in i.split(',')])
 
@@ -266,10 +266,14 @@ class Yolo_dataset(Dataset):
     def __len__(self):
         return len(self.truth.keys())
 
-    def __getitem__(self, index):
+    def __getitem__(self, index):    	
         if not self.train:
             return self._get_val_item(index)
+        
         img_path = self.imgs[index]
+        
+        # print("\n")
+        # print("__getitem__ img_path=" + img_path)
         bboxes = np.array(self.truth.get(img_path), dtype=np.float)
         img_path = os.path.join(self.cfg.dataset_dir, img_path)
         use_mixup = self.cfg.mixup
@@ -390,6 +394,8 @@ class Yolo_dataset(Dataset):
         """
         """
         img_path = self.imgs[index]
+        # print("_get_val_item:" + img_path)
+        
         bboxes_with_cls_id = np.array(self.truth.get(img_path), dtype=np.float)
         img = cv2.imread(os.path.join(self.cfg.dataset_dir, img_path))
         # img_height, img_width = img.shape[:2]
@@ -431,9 +437,22 @@ def get_image_id(filename:str) -> int:
 
     print("You could also create your own 'get_image_id' function.")
     # print(filename)
-    parts = filename.split('/')
-    id = int(parts[-1][0:-4])
-    # print(id)
+    
+    
+    # #>2024-05-13 Larry modify
+    # parts = filename.split('_')
+    # #id = int(parts[-1][0:-4])
+    # ascii_ids = ord(parts[0].split("/")[-1])
+    # id = int(chr(ascii_ids) + parts[1] + parts[-1].lower().replace(".jpg", ""))
+    # # print(id)
+    # #<End
+    
+    
+    #>2024-05-22 Larry modify
+    print("IMG=" + filename)
+    id = int(filename.split("/")[-1].lower().replace(".jpg", ""))
+    #<End
+    
     return id
 
 

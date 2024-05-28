@@ -38,6 +38,7 @@ from tool.tv_reference.coco_utils import convert_to_coco_api
 from tool.tv_reference.coco_eval import CocoEvaluator
 
 
+
 def bboxes_iou(bboxes_a, bboxes_b, xyxy=True, GIoU=False, DIoU=False, CIoU=False):
     """Calculate the Intersection of Unions (IoUs) between bounding boxes.
     IoU is calculated as a ratio of area of the intersection
@@ -128,11 +129,11 @@ def bboxes_iou(bboxes_a, bboxes_b, xyxy=True, GIoU=False, DIoU=False, CIoU=False
 
 
 class Yolo_loss(nn.Module):
-    def __init__(self, n_classes=80, n_anchors=3, device=None, batch=2):
+    def __init__(self, n_classes=80, n_anchors=3, device=None, batch=2, img_size = 608):
         super(Yolo_loss, self).__init__()
         self.device = device
         self.strides = [8, 16, 32]
-        image_size = 608
+        image_size = img_size
         self.n_classes = n_classes
         self.n_anchors = n_anchors
 
@@ -208,7 +209,8 @@ class Yolo_loss(nn.Module):
             truth_box[:n, 0] = truth_x_all[b, :n]
             truth_box[:n, 1] = truth_y_all[b, :n]
 
-            pred_ious = bboxes_iou(pred[b].view(-1, 4), truth_box, xyxy=False)
+            #pred_ious = bboxes_iou(pred[b].view(-1, 4), truth_box, xyxy=False)
+            pred_ious = bboxes_iou(pred[b].reshape(-1, 4), truth_box, xyxy=False)
             pred_best_iou, _ = pred_ious.max(dim=1)
             pred_best_iou = (pred_best_iou > self.ignore_thre)
             pred_best_iou = pred_best_iou.view(pred[b].shape[:3])
@@ -250,7 +252,7 @@ class Yolo_loss(nn.Module):
             pred[..., 1] += self.grid_y[output_id]
             pred[..., 2] = torch.exp(pred[..., 2]) * self.anchor_w[output_id]
             pred[..., 3] = torch.exp(pred[..., 3]) * self.anchor_h[output_id]
-
+            
             obj_mask, tgt_mask, tgt_scale, target = self.build_target(pred, labels, batchsize, fsize, n_ch, output_id)
 
             # loss calculation
@@ -292,10 +294,11 @@ def train(model, device, config, epochs=5, batch_size=1, save_cp=True, log_step=
     train_dataset = Yolo_dataset(config.train_label, config, train=True)
     val_dataset = Yolo_dataset(config.val_label, config, train=False)
 
+
     n_train = len(train_dataset)
     n_val = len(val_dataset)
 
-    train_loader = DataLoader(train_dataset, batch_size=config.batch // config.subdivisions, shuffle=True,
+    train_loader = DataLoader(dataset=train_dataset, batch_size=config.batch // config.subdivisions, shuffle=True,
                               num_workers=8, pin_memory=True, drop_last=True, collate_fn=collate)
 
     val_loader = DataLoader(val_dataset, batch_size=config.batch // config.subdivisions, shuffle=True, num_workers=8,
@@ -354,7 +357,7 @@ def train(model, device, config, epochs=5, batch_size=1, save_cp=True, log_step=
         )
     scheduler = optim.lr_scheduler.LambdaLR(optimizer, burnin_schedule)
 
-    criterion = Yolo_loss(device=device, batch=config.batch // config.subdivisions, n_classes=config.classes)
+    criterion = Yolo_loss(device=device, batch=config.batch // config.subdivisions, n_classes=config.classes, img_size = config.width)
     # scheduler = ReduceLROnPlateau(optimizer, mode='max', verbose=True, patience=6, min_lr=1e-7)
     # scheduler = CosineAnnealingWarmRestarts(optimizer, 0.001, 1e-6, 20)
 
@@ -538,13 +541,13 @@ def get_args(**kwargs):
                         help='Learning rate', dest='learning_rate')
     parser.add_argument('-f', '--load', dest='load', type=str, default=None,
                         help='Load model from a .pth file')
-    parser.add_argument('-g', '--gpu', metavar='G', type=str, default='-1',
+    parser.add_argument('-g', '--gpu', metavar='G', type=str, default='0',
                         help='GPU', dest='gpu')
     parser.add_argument('-dir', '--data-dir', type=str, default=None,
                         help='dataset dir', dest='dataset_dir')
-    parser.add_argument('-pretrained', type=str, default=None, help='pretrained yolov4.conv.137')
-    parser.add_argument('-classes', type=int, default=80, help='dataset classes')
-    parser.add_argument('-train_label_path', dest='train_label', type=str, default='train.txt', help="train label path")
+    parser.add_argument('-pretrained', type=str, default='yolov4.conv.137.pth', help='pretrained yolov4.conv.137')
+    parser.add_argument('-classes', type=int, default=None, help='dataset classes')
+    parser.add_argument('-train_label_path', dest='train_label', type=str, default= None, help="train label path")
     parser.add_argument(
         '-optimizer', type=str, default='adam',
         help='training optimizer',
@@ -561,7 +564,34 @@ def get_args(**kwargs):
 
     # for k in args.keys():
     #     cfg[k] = args.get(k)
+    
+    #>2024-05-07 Larry Add
+    import os
+    _BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+    dataset_dir_path = args['dataset_dir']
+    pretrained_path = args['pretrained']
+    if dataset_dir_path.startswith('/'):
+        dataset_dir_path = dataset_dir_path[1:]
+    if pretrained_path.startswith('/'):
+        pretrained_path = pretrained_path[1:]
+
+    dataset_dir_path = os.path.join(_BASE_DIR, dataset_dir_path)
+    pretrained_path = os.path.join(_BASE_DIR, pretrained_path)
+
+    cfg_Org = cfg.copy()
     cfg.update(args)
+    if cfg['classes'] is None:
+        cfg['classes'] = cfg_Org['classes']
+
+    if cfg['train_label'] is None:
+        cfg['train_label'] = cfg_Org['train_label']
+
+    if cfg['val_label'] is None:
+        cfg['val_label'] = cfg_Org['val_label']
+
+    cfg['dataset_dir'] = dataset_dir_path
+    cfg['pretrained'] = pretrained_path
+    #<End
 
     return edict(cfg)
 
@@ -609,8 +639,22 @@ def _get_date_str():
 if __name__ == "__main__":
     logging = init_logger(log_dir='log')
     cfg = get_args(**Cfg)
-    os.environ["CUDA_VISIBLE_DEVICES"] = cfg.gpu
+    
+    #註解掉，這是有另外安裝在(base)下的CUDA才會偵測得到，conda環境不適用
+    #os.environ["CUDA_VISIBLE_DEVICES"] = cfg.gpu    
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    
+    # 打印 Python 解释器版本
+    print("Python interpreter version:", sys.version)
+    # 打印 PyTorch 版本
+    print("PyTorch version:", torch.__version__)
+    # 检查 CUDA 是否可用以及 CUDA 版本
+    print("CUDA available:", torch.cuda.is_available())
+    if torch.cuda.is_available():
+      print("CUDA version:", torch.version.cuda)
+      print("Number of CUDA devices:", torch.cuda.device_count())
+    
+
     logging.info(f'Using device {device}')
 
     if cfg.use_darknet_cfg:

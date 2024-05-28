@@ -1,6 +1,6 @@
 ttest
-*.weights
-*.pth
+#*.weights
+#*.pth
 *.onnx
 *.engine
 *.pyc

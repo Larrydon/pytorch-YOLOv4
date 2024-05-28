@@ -1,0 +1,6 @@
+classes= 2
+train  = /home/yolo/YOLOv4/data/train.txt
+valid  = /home/yolo/YOLOv4/data/valid.txt
+names = /home/yolo/YOLOv4/data/obj.names
+backup = /home/yolo/YOLOv4/backup/
+

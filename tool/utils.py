@@ -97,9 +97,12 @@ def nms_cpu(boxes, confs, nms_thresh=0.5, min_mode=False):
 
 
 def plot_boxes_cv2(img, boxes, savename=None, class_names=None, color=None):
+    print('plot_boxes_cv2 savename=' + savename)
+    
     import cv2
     img = np.copy(img)
     colors = np.array([[1, 0, 1], [0, 0, 1], [0, 1, 1], [0, 1, 0], [1, 1, 0], [1, 0, 0]], dtype=np.float32)
+    
 
     def get_color(c, x, max_val):
         ratio = float(x) / max_val * 5
@@ -125,6 +128,8 @@ def plot_boxes_cv2(img, boxes, savename=None, class_names=None, color=None):
         if len(box) >= 7 and class_names:
             cls_conf = box[5]
             cls_id = box[6]
+            print('box[5]=' + str(cls_conf))
+            print('box[6]=' + str(cls_id))
             print('%s: %f' % (class_names[cls_id], cls_conf))
             classes = len(class_names)
             offset = cls_id * 123457 % classes
@@ -133,17 +138,23 @@ def plot_boxes_cv2(img, boxes, savename=None, class_names=None, color=None):
             blue = get_color(0, offset, classes)
             if color is None:
                 rgb = (red, green, blue)
+                
             msg = str(class_names[cls_id])+" "+str(round(cls_conf,3))
             t_size = cv2.getTextSize(msg, 0, 0.7, thickness=bbox_thick // 2)[0]
             c1, c2 = (x1,y1), (x2, y2)
             c3 = (c1[0] + t_size[0], c1[1] - t_size[1] - 3)
-            cv2.rectangle(img, (x1,y1), (np.float32(c3[0]), np.float32(c3[1])), rgb, -1)
-            img = cv2.putText(img, msg, (c1[0], np.float32(c1[1] - 2)), cv2.FONT_HERSHEY_SIMPLEX,0.7, (0,0,0), bbox_thick//2,lineType=cv2.LINE_AA)
+            cv2.rectangle(img, (x1,y1), (np.int32(c3[0]), np.int32(c3[1])), rgb, -1)
+            img = cv2.putText(img, msg, (c1[0], np.int32(c1[1] - 2)), cv2.FONT_HERSHEY_SIMPLEX,0.7, (0,0,0), bbox_thick//2,lineType=cv2.LINE_AA)
+            # img = cv2.putText(img, class_names[cls_id], (x1, y1), cv2.FONT_HERSHEY_DUPLEX, 1.2, rgb, 1)
         
-        img = cv2.rectangle(img, (x1, y1), (x2, y2), rgb, bbox_thick)
+        img = cv2.rectangle(img, (x1, y1), (x2, y2), rgb, bbox_thick)        
+        # img = cv2.rectangle(img, (x1, y1), (x2, y2), rgb, 1)
     if savename:
         print("save plot results to %s" % savename)
         cv2.imwrite(savename, img)
+        
+        # 修改檔案權限
+        os.chmod(savename, 0o755)  # 這裡的 0o755 表示權限，可以根據你的需求修改
     return img
 
 
