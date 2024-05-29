@@ -18,3 +18,4 @@ log
 *.jpg
 *.json
 data/outcome
+weight/yolov4-tiny.conv.29
