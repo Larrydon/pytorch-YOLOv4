@@ -11,7 +11,7 @@ z_demo_*
 
 __pycache__
 .idea
-.vscode
+#.vscode
 runs
 log
 
