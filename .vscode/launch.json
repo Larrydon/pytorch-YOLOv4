@@ -1,0 +1,85 @@
+{
+    // 使用 IntelliSense 以得知可用的屬性。
+    // 暫留以檢視現有屬性的描述。
+    // 如需詳細資訊，請瀏覽: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            //指定python解释器
+            "python": "/home/yolo/anaconda3/envs/py38/bin/python",
+            "name": "Python ConvertEtroIMG2SingleID Debug",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "/home/yolo/IMG/FREEWAY/10_test_train_dataset/20240401_IMG_E41",
+                "/home/yolo/YOLOv4/data/img_2"
+            ]
+        },
+        {
+            //指定python解释器
+            "python": "/home/yolo/anaconda3/envs/py38/bin/python",
+            "name": "Python weight2pth Debug",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "/cfg/yolov4-tiny.cfg",
+                "/weight/yolov4-tiny.weights",
+                "/weight/yolov4-tiny.pth"
+            ]
+        },
+        {
+            //指定python解释器
+            "python": "/home/yolo/anaconda3/envs/py38/bin/python",
+            "name": "Python models Debug",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "/checkpoints/Yolov4_epoch300.pth",
+                "/data/test1.jpg",
+                "/data/obj.names"
+            ]
+        },
+        {
+            //指定python解释器
+            "python": "/home/yolo/anaconda3/envs/py38/bin/python",
+            "name": "Python labelImgML2txt Debug",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "args": [
+                "-dir",
+                "/data/img",
+                "-clasessname",
+                "/data/obj.names"
+            ]
+        },
+        {
+            //指定python解释器
+            "python": "/home/yolo/anaconda3/envs/py38/bin/python",
+            "name": "Python: Train Debug",
+            "type": "debugpy", //"debugpy", //python
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "justMyCode": true,
+            //命令行参数
+            "args": [
+                "-l",
+                "0.001",
+                "--gpu",
+                "0",
+                "-pretrained",
+                "/weight/yolov4.conv.137.pth", // /weight/yolov4.conv.137.pth(yolov4)、/weight/yolov4-tiny.pth(yolov4-tiny)
+                "-dir",
+                "/data/img"
+            ]
+        }
+    ]
+}

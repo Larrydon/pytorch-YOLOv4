@@ -27,6 +27,9 @@ if len(sys.argv) < 3:
 source_img_path = sys.argv[1]
 convert2singleid_path = sys.argv[2]
 
+print("source_img_path=" + source_img_path)
+print("convert2singleid_path=" + convert2singleid_path)
+
 
 def find_images(source):
     # 用於匹配的圖檔擴展名

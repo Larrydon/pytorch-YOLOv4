@@ -12,10 +12,11 @@ z_demo_*
 __pycache__
 .idea
 #.vscode
+data/img
 runs
 log
 
 *.jpg
-*.json
+#*.json
 data/outcome
 weight/yolov4-tiny.conv.29
