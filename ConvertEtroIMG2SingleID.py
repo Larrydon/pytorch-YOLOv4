@@ -58,6 +58,11 @@ images = find_images(source_img_path)
 #for image in images:
 #    print(image)
 
+if len(images) == 0:
+    print("Can't find any jpg file by source_img_path")
+    sys.exit(1)
+
+
 def CheckAllIsNumber(input_text)->bool:
     if re.fullmatch(r'\d+', input_text):
         return True
